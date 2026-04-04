@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#define 	ADC_SAMPLE_TIME						LL_ADC_SAMPLINGTIME_6CYCLES_5
+#define 	ADC_SAMPLE_TIME						LL_ADC_SAMPLINGTIME_24CYCLES_5
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,6 +64,7 @@ static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_IWDG_Init(void);
 /* USER CODE BEGIN PFP */
+void Activate_ADC(ADC_TypeDef *ADCx);
 
 /* USER CODE END PFP */
 
@@ -128,11 +129,13 @@ int main(void)
   MX_TIM3_Init();
  // MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
-	while (1)
-		{
-			Trace_Print("  uart test \r\n ");
-			delayms(10);
-		}
+
+ Activate_ADC(ADC1);
+ Activate_ADC(ADC2);
+ Activate_ADC(ADC3);
+ Activate_ADC(ADC4);
+ Activate_ADC(ADC5);
+ initADC();
 
   /* USER CODE END 2 */
 
@@ -286,15 +289,15 @@ static void MX_ADC1_Init(void)
   ADC_InitStruct.LowPowerMode = LL_ADC_LP_MODE_NONE;
   LL_ADC_Init(ADC1, &ADC_InitStruct);
   ADC_REG_InitStruct.TriggerSource = LL_ADC_REG_TRIG_SOFTWARE;
-  ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_DISABLE;
+  ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_ENABLE_5RANKS;
   ADC_REG_InitStruct.SequencerDiscont = LL_ADC_REG_SEQ_DISCONT_DISABLE;
-  ADC_REG_InitStruct.ContinuousMode = LL_ADC_REG_CONV_SINGLE;
-  ADC_REG_InitStruct.DMATransfer = LL_ADC_REG_DMA_TRANSFER_LIMITED;
+  ADC_REG_InitStruct.ContinuousMode = LL_ADC_REG_CONV_CONTINUOUS;
+  ADC_REG_InitStruct.DMATransfer = LL_ADC_REG_DMA_TRANSFER_UNLIMITED;
   ADC_REG_InitStruct.Overrun = LL_ADC_REG_OVR_DATA_PRESERVED;
   LL_ADC_REG_Init(ADC1, &ADC_REG_InitStruct);
   LL_ADC_SetGainCompensation(ADC1, 0);
   LL_ADC_SetOverSamplingScope(ADC1, LL_ADC_OVS_DISABLE);
-  ADC_CommonInitStruct.CommonClock = LL_ADC_CLOCK_ASYNC_DIV4;
+  ADC_CommonInitStruct.CommonClock = LL_ADC_CLOCK_ASYNC_DIV16;
   ADC_CommonInitStruct.Multimode = LL_ADC_MULTI_INDEPENDENT;
   LL_ADC_CommonInit(__LL_ADC_COMMON_INSTANCE(ADC1), &ADC_CommonInitStruct);
 
@@ -340,7 +343,9 @@ static void MX_ADC1_Init(void)
   LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_9, ADC_SAMPLE_TIME);
   LL_ADC_SetChannelSingleDiff(ADC1, LL_ADC_CHANNEL_9, LL_ADC_SINGLE_ENDED);
 
-
+	//LL_ADC_REG_SetSequencerLength(ADC1,LL_ADC_REG_SEQ_SCAN_ENABLE_5RANKS);
+	//LL_ADC_REG_SetContinuousMode
+ 
 
   /* USER CODE END ADC1_Init 2 */
 
@@ -432,10 +437,10 @@ static void MX_ADC2_Init(void)
   ADC_InitStruct.LowPowerMode = LL_ADC_LP_MODE_NONE;
   LL_ADC_Init(ADC2, &ADC_InitStruct);
   ADC_REG_InitStruct.TriggerSource = LL_ADC_REG_TRIG_SOFTWARE;
-  ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_DISABLE;
+  ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_ENABLE_5RANKS;
   ADC_REG_InitStruct.SequencerDiscont = LL_ADC_REG_SEQ_DISCONT_DISABLE;
-  ADC_REG_InitStruct.ContinuousMode = LL_ADC_REG_CONV_SINGLE;
-  ADC_REG_InitStruct.DMATransfer = LL_ADC_REG_DMA_TRANSFER_LIMITED;
+  ADC_REG_InitStruct.ContinuousMode = LL_ADC_REG_CONV_CONTINUOUS;
+  ADC_REG_InitStruct.DMATransfer = LL_ADC_REG_DMA_TRANSFER_UNLIMITED;
   ADC_REG_InitStruct.Overrun = LL_ADC_REG_OVR_DATA_PRESERVED;
   LL_ADC_REG_Init(ADC2, &ADC_REG_InitStruct);
   LL_ADC_SetGainCompensation(ADC2, 0);
@@ -482,6 +487,8 @@ static void MX_ADC2_Init(void)
 	LL_ADC_REG_SetSequencerRanks(ADC2, LL_ADC_REG_RANK_5, LL_ADC_CHANNEL_7);
   LL_ADC_SetChannelSamplingTime(ADC2, LL_ADC_CHANNEL_7, ADC_SAMPLE_TIME);
   LL_ADC_SetChannelSingleDiff(ADC2, LL_ADC_CHANNEL_7, LL_ADC_SINGLE_ENDED);
+	
+	//LL_ADC_REG_SetSequencerLength(ADC2,LL_ADC_REG_SEQ_SCAN_ENABLE_5RANKS);
 
   /* USER CODE END ADC2_Init 2 */
 
@@ -573,10 +580,10 @@ static void MX_ADC3_Init(void)
   ADC_InitStruct.LowPowerMode = LL_ADC_LP_MODE_NONE;
   LL_ADC_Init(ADC3, &ADC_InitStruct);
   ADC_REG_InitStruct.TriggerSource = LL_ADC_REG_TRIG_SOFTWARE;
-  ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_DISABLE;
+  ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_ENABLE_5RANKS;
   ADC_REG_InitStruct.SequencerDiscont = LL_ADC_REG_SEQ_DISCONT_DISABLE;
-  ADC_REG_InitStruct.ContinuousMode = LL_ADC_REG_CONV_SINGLE;
-  ADC_REG_InitStruct.DMATransfer = LL_ADC_REG_DMA_TRANSFER_LIMITED;
+  ADC_REG_InitStruct.ContinuousMode = LL_ADC_REG_CONV_CONTINUOUS;
+  ADC_REG_InitStruct.DMATransfer = LL_ADC_REG_DMA_TRANSFER_UNLIMITED;
   ADC_REG_InitStruct.Overrun = LL_ADC_REG_OVR_DATA_PRESERVED;
   LL_ADC_REG_Init(ADC3, &ADC_REG_InitStruct);
   LL_ADC_SetGainCompensation(ADC3, 0);
@@ -619,13 +626,15 @@ static void MX_ADC3_Init(void)
   LL_ADC_SetChannelSamplingTime(ADC3, LL_ADC_CHANNEL_2, ADC_SAMPLE_TIME);
   LL_ADC_SetChannelSingleDiff(ADC3, LL_ADC_CHANNEL_2, LL_ADC_SINGLE_ENDED);
 
-	LL_ADC_REG_SetSequencerRanks(ADC3, LL_ADC_REG_RANK_4, LL_ADC_CHANNEL_4);
-  LL_ADC_SetChannelSamplingTime(ADC3, LL_ADC_CHANNEL_4, ADC_SAMPLE_TIME);
-  LL_ADC_SetChannelSingleDiff(ADC3, LL_ADC_CHANNEL_4, LL_ADC_SINGLE_ENDED);
-
-  LL_ADC_REG_SetSequencerRanks(ADC3, LL_ADC_REG_RANK_5, LL_ADC_CHANNEL_6);
+	LL_ADC_REG_SetSequencerRanks(ADC3, LL_ADC_REG_RANK_4, LL_ADC_CHANNEL_6);
   LL_ADC_SetChannelSamplingTime(ADC3, LL_ADC_CHANNEL_6, ADC_SAMPLE_TIME);
   LL_ADC_SetChannelSingleDiff(ADC3, LL_ADC_CHANNEL_6, LL_ADC_SINGLE_ENDED);
+
+  LL_ADC_REG_SetSequencerRanks(ADC3, LL_ADC_REG_RANK_5, LL_ADC_CHANNEL_4);
+  LL_ADC_SetChannelSamplingTime(ADC3, LL_ADC_CHANNEL_4, ADC_SAMPLE_TIME);
+  LL_ADC_SetChannelSingleDiff(ADC3, LL_ADC_CHANNEL_4, LL_ADC_SINGLE_ENDED);
+	
+	//LL_ADC_REG_SetSequencerLength(ADC3,LL_ADC_REG_SEQ_SCAN_ENABLE_5RANKS);
 
 
 
@@ -719,10 +728,10 @@ static void MX_ADC4_Init(void)
   ADC_InitStruct.LowPowerMode = LL_ADC_LP_MODE_NONE;
   LL_ADC_Init(ADC4, &ADC_InitStruct);
   ADC_REG_InitStruct.TriggerSource = LL_ADC_REG_TRIG_SOFTWARE;
-  ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_DISABLE;
+  ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_ENABLE_5RANKS;
   ADC_REG_InitStruct.SequencerDiscont = LL_ADC_REG_SEQ_DISCONT_DISABLE;
-  ADC_REG_InitStruct.ContinuousMode = LL_ADC_REG_CONV_SINGLE;
-  ADC_REG_InitStruct.DMATransfer = LL_ADC_REG_DMA_TRANSFER_LIMITED;
+  ADC_REG_InitStruct.ContinuousMode = LL_ADC_REG_CONV_CONTINUOUS;
+  ADC_REG_InitStruct.DMATransfer = LL_ADC_REG_DMA_TRANSFER_UNLIMITED;
   ADC_REG_InitStruct.Overrun = LL_ADC_REG_OVR_DATA_PRESERVED;
   LL_ADC_REG_Init(ADC4, &ADC_REG_InitStruct);
   LL_ADC_SetGainCompensation(ADC4, 0);
@@ -770,7 +779,7 @@ static void MX_ADC4_Init(void)
   LL_ADC_SetChannelSamplingTime(ADC4, LL_ADC_CHANNEL_3, ADC_SAMPLE_TIME);
   LL_ADC_SetChannelSingleDiff(ADC4, LL_ADC_CHANNEL_3, LL_ADC_SINGLE_ENDED);
 
-	
+	//LL_ADC_REG_SetSequencerLength(ADC4,LL_ADC_REG_SEQ_SCAN_ENABLE_5RANKS);
 
   /* USER CODE END ADC4_Init 2 */
 
@@ -862,15 +871,15 @@ static void MX_ADC5_Init(void)
   ADC_InitStruct.LowPowerMode = LL_ADC_LP_MODE_NONE;
   LL_ADC_Init(ADC5, &ADC_InitStruct);
   ADC_REG_InitStruct.TriggerSource = LL_ADC_REG_TRIG_SOFTWARE;
-  ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_DISABLE;
+  ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_ENABLE_5RANKS;
   ADC_REG_InitStruct.SequencerDiscont = LL_ADC_REG_SEQ_DISCONT_DISABLE;
-  ADC_REG_InitStruct.ContinuousMode = LL_ADC_REG_CONV_SINGLE;
-  ADC_REG_InitStruct.DMATransfer = LL_ADC_REG_DMA_TRANSFER_LIMITED;
+  ADC_REG_InitStruct.ContinuousMode = LL_ADC_REG_CONV_CONTINUOUS;
+  ADC_REG_InitStruct.DMATransfer = LL_ADC_REG_DMA_TRANSFER_UNLIMITED;
   ADC_REG_InitStruct.Overrun = LL_ADC_REG_OVR_DATA_PRESERVED;
   LL_ADC_REG_Init(ADC5, &ADC_REG_InitStruct);
   LL_ADC_SetGainCompensation(ADC5, 0);
   LL_ADC_SetOverSamplingScope(ADC5, LL_ADC_OVS_DISABLE);
-  ADC_CommonInitStruct.CommonClock = LL_ADC_CLOCK_ASYNC_DIV4;
+  ADC_CommonInitStruct.CommonClock = LL_ADC_CLOCK_ASYNC_DIV16;
   LL_ADC_CommonInit(__LL_ADC_COMMON_INSTANCE(ADC5), &ADC_CommonInitStruct);
 
   /* Disable ADC deep power down (enabled by default after reset state) */
@@ -914,6 +923,8 @@ static void MX_ADC5_Init(void)
 	LL_ADC_REG_SetSequencerRanks(ADC5, LL_ADC_REG_RANK_5, LL_ADC_CHANNEL_11);
   LL_ADC_SetChannelSamplingTime(ADC5, LL_ADC_CHANNEL_11, ADC_SAMPLE_TIME);
   LL_ADC_SetChannelSingleDiff(ADC5, LL_ADC_CHANNEL_11, LL_ADC_SINGLE_ENDED);
+
+	//LL_ADC_REG_SetSequencerLength(ADC5,LL_ADC_REG_SEQ_SCAN_ENABLE_5RANKS);
 
   /* USER CODE END ADC5_Init 2 */
 
@@ -1782,6 +1793,80 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+void Activate_ADC(ADC_TypeDef *ADCx)
+{
+  __IO uint32_t wait_loop_index = 0U;
+  #if (USE_TIMEOUT == 1)
+  uint32_t Timeout = 0U; /* Variable used for timeout management */
+  #endif /* USE_TIMEOUT */
+  
+  /*## Operation on ADC hierarchical scope: ADC instance #####################*/
+  
+  /* Note: Hardware constraint (refer to description of the functions         */
+  /*       below):                                                            */
+  /*       On this STM32 series, setting of these features is conditioned to   */
+  /*       ADC state:                                                         */
+  /*       ADC must be disabled.                                              */
+  /* Note: In this example, all these checks are not necessary but are        */
+  /*       implemented anyway to show the best practice usages                */
+  /*       corresponding to reference manual procedure.                       */
+  /*       Software can be optimized by removing some of these checks, if     */
+  /*       they are not relevant considering previous settings and actions    */
+  /*       in user application.                                               */
+  if (LL_ADC_IsEnabled(ADCx) == 0)
+  {
+    /* Disable ADC deep power down (enabled by default after reset state) */
+    LL_ADC_DisableDeepPowerDown(ADCx);
+    
+    /* Enable ADC internal voltage regulator */
+    LL_ADC_EnableInternalRegulator(ADCx);
+    
+    /* Delay for ADC internal voltage regulator stabilization.                */
+    /* Compute number of CPU cycles to wait for, from delay in us.            */
+    /* Note: Variable divided by 2 to compensate partially                    */
+    /*       CPU processing cycles (depends on compilation optimization).     */
+    /* Note: If system core clock frequency is below 200kHz, wait time        */
+    /*       is only a few CPU processing cycles.                             */
+    wait_loop_index = ((LL_ADC_DELAY_INTERNAL_REGUL_STAB_US * (SystemCoreClock / (100000 * 2))) / 10);
+    while(wait_loop_index != 0)
+    {
+      wait_loop_index--;
+    }
+    
+    /* Run ADC self calibration */
+    LL_ADC_StartCalibration(ADCx, LL_ADC_SINGLE_ENDED);
+    
+
+		delayms(10);
+    while (LL_ADC_IsCalibrationOnGoing(ADCx) != 0)
+    {
+
+    }
+    
+    /* Delay between ADC end of calibration and ADC enable.                   */
+    /* Note: Variable divided by 2 to compensate partially                    */
+    /*       CPU processing cycles (depends on compilation optimization).     */
+		delayms(20);
+    
+    /* Enable ADC */
+    LL_ADC_Enable(ADCx);
+    
+    /* Poll for ADC ready to convert */
+		delayms(20);
+
+    
+    while (LL_ADC_IsActiveFlag_ADRDY(ADCx) == 0)
+    {
+
+    }
+    
+    /* Note: ADC flag ADRDY is not cleared here to be able to check ADC       */
+    /*       status afterwards.                                               */
+    /*       This flag should be cleared at ADC Deactivation, before a new    */
+    /*       ADC activation, using function "LL_ADC_ClearFlag_ADRDY()".       */
+  }
+
+}
 /* USER CODE END 4 */
 
 /**
@@ -1799,19 +1884,3 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
-/**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
-void assert_failed(uint8_t *file, uint32_t line)
-{
-  /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-  /* USER CODE END 6 */
-}
-#endif /* USE_FULL_ASSERT */

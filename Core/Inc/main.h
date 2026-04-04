@@ -43,6 +43,8 @@ extern "C" {
 #include "stm32g4xx_ll_usart.h"
 #include "stm32g4xx_ll_gpio.h"
 
+#include "stm32g4xx_hal_flash.h"
+
 #if defined(USE_FULL_ASSERT)
 #include "stm32_assert.h"
 #endif /* USE_FULL_ASSERT */
@@ -54,6 +56,7 @@ extern "C" {
 #define 	u16   unsigned short
 #define 	u32   unsigned int
 #define 	u64   unsigned long long
+#define 	s16   short
 
 
 #include "stdio.h"
