@@ -2,14 +2,32 @@
 #include "main.h"
 /**************************************************************************************************/
 
-#define 	UART_TX_SIZE			512
+#define 	UART_TX_SIZE			64
 #define 	UART_RX_SIZE			64
+
 /**************************************************************************************************/
-extern FifoStruct UartTxFifo;
-extern FifoStruct UartRxFifo;
+
+
+
+extern FifoStruct UartCommInTxFifo;			//接收串口      from PC
+extern FifoStruct UartCommInRxFifo;
+
+extern FifoStruct UartTraceTxFifo;				//调试串口
+extern FifoStruct UartTraceRxFifo;
+
+
+extern FifoStruct UartCommOutTxFifo;			//发送串口      to MCU
+extern FifoStruct UartCommOutRxFifo;
+
+
+
 /**************************************************************************************************/
 
 void initUartFifo(void);
+void uart4Func(void);
+void uart5Func(void);
+
+
 /**************************************************************************************************/
 
 /**************************************************************************************************/

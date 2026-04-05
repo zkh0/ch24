@@ -10,14 +10,11 @@ __attribute__((aligned(8)))
 stUserPara userPara;
 
 /**************************************************************************************************************/
-
-int ampOffset;
-u8 adcOffset;
+u8  cleanFinished = 0;
 
 enumTestState cleanState = state_reset;
 enumCrystalPoint crystalPoint= crystal_before_clean;
 u16 crystalRes[CRYSTAL_NUM][max_crystal_point];
-u8 autoRunFlag=1;				// 如果autorun =0, 表示手动操作
 u32 tick;
 /**************************************************************************************************************/
 #define 	ADC_BUFFER_SIZE	 (5*8)
@@ -44,7 +41,7 @@ u16 ADCAllBuffer[CRYSTAL_NUM];
 u16 ADC1_2Value;
 
 /**************************************************************************************************************/
-
+extern u8 myAddr; 
 /**************************************************************************************************************/
 
 
@@ -71,12 +68,11 @@ u16 calcCrystalRes(u16 AD,u8 ch)    // mv, 返回电阻值,
 		float m;
 
 
-
-
 		if (userPara.magicData == MAGIC_DATA)			//使用校准参数
 			{
 					m = AD + userPara.ampOffset[ch];
 			}
+		else m = AD;
 
 		voltage = (m * 3300.0f) / 4096.0f ;
 		voltage = voltage / VOLTAGE_AMP;
@@ -160,6 +156,18 @@ void clearOverCurrentFlag(void)
 }
 
 /**************************************************************************************************************/
+void traceCrystalRes(void)
+{
+	int i;
+	for (i=0;i<CRYSTAL_NUM;i++) 				
+	{
+			Trace_Print(" [%d] = %d \r\n",i+1,calcCrystalRes(ADCAllBuffer[i],i));
+			delayms(2);
+	}
+}
+
+/**************************************************************************************************************/
+
 
 void cleanMain(void)
 {
@@ -171,9 +179,9 @@ void cleanMain(void)
 				if (checkStart()) 
 				{
 						cleanState = state_idle;
-					//	cleanState = state_calibration;
 						initVar();
 						setOverCurrent();
+						cleanFinished = 0;
 					}
 				break;
 			case state_idle:
@@ -182,7 +190,7 @@ void cleanMain(void)
 						Trace_Print(" start detect crystal\r\n");
 						cleanState = state_detect;
 						measureVoltage(ON);
-						hwDelayms(10);				// 等待电源稳定
+						hwDelayms(20);				// 等待电源稳定
 					}
 				break;
 			case state_detect:
@@ -191,27 +199,28 @@ void cleanMain(void)
 					updateCrystalRes(crystal_before_clean);			
 					measureVoltage(OFF);
 					hwDelayms(1);
+					traceCrystalRes();
 				break;
 
 			case state_clean:
 				clean();
+				
+			
 				updateCrystalRes(crystal_after_clean);
-				hwDelayms(10);
+				hwDelayms(500);
+				
 					{
-						tick = getTick();
 						Trace_Print(" clean finished!  now ready to detect again\r\n");
-						hwDelayms(1);
-						if (autoRunFlag) cleanState = state_detect_after_clean;
-						else cleanState = state_wait;
+						cleanState = state_wait;
+						cleanFinished = 1;
 					}
 				
 				break;
 			case state_detect_after_clean:
+				
 					hwDelayms(1);
-					Trace_Print(" detect after clean, go to idle\r\n");
-					if (autoRunFlag) cleanState = state_reset;
-					else cleanState = state_wait;
-					//traceCrystalState();
+					cleanState = state_wait;
+
 				break;
 					
 			case state_calibration:
@@ -223,12 +232,10 @@ void cleanMain(void)
 					measureVoltage(OFF);
 					calibration();
 					hwDelayms(100);
-					//cleanState = state_reset;
-					while (1);
+					cleanState = state_reset;
 				break;
 					
 			case state_wait:
-				//wait start signal deactive
 				if (checkStart() == 0) cleanState = state_idle;
 				break;
 			
@@ -299,8 +306,6 @@ void initVar(void)
 {
 	int i;
 
-	ampOffset = 0;
-	adcOffset = 0;
 	readpara();
 
 }
@@ -374,7 +379,7 @@ void calibration(void)
 volatile float offset;
 volatile float voltage;
 
-s16 calibrationOne(u16 AD)   //返回偏差值，校准电阻用100欧
+float calibrationOne(u16 AD)   //返回偏差值，校准电阻用100欧
 {
 		int i;
 
@@ -395,7 +400,7 @@ s16 calibrationOne(u16 AD)   //返回偏差值，校准电阻用100欧
 		offset = (m - (float)AD );
 
 
-		return (s16)offset;	
+		return offset;	
 
 
 
@@ -640,7 +645,15 @@ uint32_t HAL_GetTick(void)
 }
 
 /**************************************************************************************************************/
-
+void readMyAddr(void)
+{
+	u8 addr = 0;
+	if (LL_GPIO_IsInputPinSet(AR1_GPIO_Port, AR1_Pin)==0) addr = 1;
+	if (LL_GPIO_IsInputPinSet(AR2_GPIO_Port, AR2_Pin)==0) addr |= 0x02;
+	if (LL_GPIO_IsInputPinSet(AR3_GPIO_Port, AR3_Pin)==0) addr |= 0x04;
+	if (LL_GPIO_IsInputPinSet(AR4_GPIO_Port, AR4_Pin)==0) addr |= 0x08;
+	myAddr = addr;
+}
 /**************************************************************************************************************/
 
 /**************************************************************************************************************/

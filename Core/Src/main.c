@@ -129,14 +129,14 @@ int main(void)
   MX_TIM3_Init();
  // MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
-
+	readMyAddr();
  Activate_ADC(ADC1);
  Activate_ADC(ADC2);
  Activate_ADC(ADC3);
  Activate_ADC(ADC4);
  Activate_ADC(ADC5);
  initADC();
-
+  Trace_Print(" system start \r\n");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -144,6 +144,9 @@ int main(void)
   while (1)
   {
   	cleanMain();
+		debugFunc();
+	//	testuart4Send();
+	//	testuart5Send();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -588,7 +591,7 @@ static void MX_ADC3_Init(void)
   LL_ADC_REG_Init(ADC3, &ADC_REG_InitStruct);
   LL_ADC_SetGainCompensation(ADC3, 0);
   LL_ADC_SetOverSamplingScope(ADC3, LL_ADC_OVS_DISABLE);
-  ADC_CommonInitStruct.CommonClock = LL_ADC_CLOCK_ASYNC_DIV4;
+  ADC_CommonInitStruct.CommonClock = LL_ADC_CLOCK_ASYNC_DIV16;
   ADC_CommonInitStruct.Multimode = LL_ADC_MULTI_INDEPENDENT;
   LL_ADC_CommonInit(__LL_ADC_COMMON_INSTANCE(ADC3), &ADC_CommonInitStruct);
 
@@ -1210,7 +1213,7 @@ static void MX_UART4_Init(void)
   LL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /* UART4 interrupt Init */
-  NVIC_SetPriority(UART4_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),9, 0));
+  NVIC_SetPriority(UART4_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),2, 0));
   NVIC_EnableIRQ(UART4_IRQn);
 
   /* USER CODE BEGIN UART4_Init 1 */
@@ -1226,12 +1229,13 @@ static void MX_UART4_Init(void)
   USART_InitStruct.OverSampling = LL_USART_OVERSAMPLING_16;
   LL_USART_Init(UART4, &USART_InitStruct);
   LL_USART_DisableFIFO(UART4);
-  LL_USART_SetTXFIFOThreshold(UART4, LL_USART_FIFOTHRESHOLD_1_8);
-  LL_USART_SetRXFIFOThreshold(UART4, LL_USART_FIFOTHRESHOLD_1_8);
+  LL_USART_SetTXFIFOThreshold(UART4, LL_USART_FIFOTHRESHOLD_1_2);
+  LL_USART_SetRXFIFOThreshold(UART4, LL_USART_FIFOTHRESHOLD_1_2);
   LL_USART_ConfigAsyncMode(UART4);
 
   /* USER CODE BEGIN WKUPType UART4 */
-
+	LL_USART_EnableIT_RXNE(UART4);
+	LL_USART_EnableIT_IDLE(UART4);
   /* USER CODE END WKUPType UART4 */
 
   LL_USART_Enable(UART4);
@@ -1290,7 +1294,7 @@ static void MX_UART5_Init(void)
   LL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /* UART5 interrupt Init */
-  NVIC_SetPriority(UART5_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),8, 0));
+  NVIC_SetPriority(UART5_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),2, 0));
   NVIC_EnableIRQ(UART5_IRQn);
 
   /* USER CODE BEGIN UART5_Init 1 */
@@ -1306,11 +1310,13 @@ static void MX_UART5_Init(void)
   USART_InitStruct.OverSampling = LL_USART_OVERSAMPLING_16;
   LL_USART_Init(UART5, &USART_InitStruct);
   LL_USART_DisableFIFO(UART5);
-  LL_USART_SetTXFIFOThreshold(UART5, LL_USART_FIFOTHRESHOLD_1_8);
-  LL_USART_SetRXFIFOThreshold(UART5, LL_USART_FIFOTHRESHOLD_1_8);
+  LL_USART_SetTXFIFOThreshold(UART5, LL_USART_FIFOTHRESHOLD_1_2);
+  LL_USART_SetRXFIFOThreshold(UART5, LL_USART_FIFOTHRESHOLD_1_2);
   LL_USART_ConfigAsyncMode(UART5);
 
   /* USER CODE BEGIN WKUPType UART5 */
+	LL_USART_EnableIT_RXNE(UART5);
+	LL_USART_EnableIT_IDLE(UART5);
 
   /* USER CODE END WKUPType UART5 */
 
@@ -1380,13 +1386,14 @@ static void MX_USART1_UART_Init(void)
   USART_InitStruct.HardwareFlowControl = LL_USART_HWCONTROL_NONE;
   USART_InitStruct.OverSampling = LL_USART_OVERSAMPLING_16;
   LL_USART_Init(USART1, &USART_InitStruct);
-  LL_USART_SetTXFIFOThreshold(USART1, LL_USART_FIFOTHRESHOLD_1_8);
-  LL_USART_SetRXFIFOThreshold(USART1, LL_USART_FIFOTHRESHOLD_1_8);
+  LL_USART_SetTXFIFOThreshold(USART1, LL_USART_FIFOTHRESHOLD_1_2);
+  LL_USART_SetRXFIFOThreshold(USART1, LL_USART_FIFOTHRESHOLD_1_2);
   LL_USART_DisableFIFO(USART1);
   LL_USART_ConfigAsyncMode(USART1);
 
   /* USER CODE BEGIN WKUPType USART1 */
-
+	LL_USART_EnableIT_RXNE(USART1);
+	LL_USART_EnableIT_IDLE(USART1);
   /* USER CODE END WKUPType USART1 */
 
   LL_USART_Enable(USART1);
