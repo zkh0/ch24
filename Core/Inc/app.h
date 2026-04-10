@@ -105,6 +105,8 @@ void calibration(void);
 void updateCrystalRes(enumCrystalPoint state) ;
 u16 calcCrystalRes(u16 AD,u8 ch);
 void readMyAddr(void);
+void sendAdcDataToPC(void);
+void sendDataToPC(void);
 
 /**************************************************************************************************************/
 

@@ -143,10 +143,12 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+		
+
   	cleanMain();
 		debugFunc();
-	//	testuart4Send();
-	//	testuart5Send();
+    //testuart4Send();
+		//testuart5Send();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -1392,8 +1394,8 @@ static void MX_USART1_UART_Init(void)
   LL_USART_ConfigAsyncMode(USART1);
 
   /* USER CODE BEGIN WKUPType USART1 */
-	LL_USART_EnableIT_RXNE(USART1);
-	LL_USART_EnableIT_IDLE(USART1);
+	//LL_USART_EnableIT_RXNE(USART1);
+	//LL_USART_EnableIT_IDLE(USART1);
   /* USER CODE END WKUPType USART1 */
 
   LL_USART_Enable(USART1);

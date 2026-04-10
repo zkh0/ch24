@@ -8,8 +8,8 @@
 u8 frameInRxBuffer[UART_RX_SIZE];
 u8 frameOutRxBuffer[UART_RX_SIZE];
 
-u8 frameInTxBuffer[UART_RX_SIZE];				
-u8 frameOutTxBuffer[UART_RX_SIZE];
+u8 frameInTxBuffer[UART_RX_SIZE];			//pc->mcu 发送	
+u8 frameOutTxBuffer[UART_RX_SIZE];    //mcu->pc 发送
 
 /**************************************************************************************************************/
 /**************************************************************************************************************/
@@ -65,20 +65,25 @@ void testuart5Send(void)
 /**************************************************************************************************************/
 
 /**************************************************************************************************************/
-void sendInToNext(u8 *buffer,u8 len)			 //转发数据
+void sendInToNext(u8 *buffer,u8 len)			 //pc->mcu发送
 {
 	int i;
 	for (i=0;i<len;i++)  EnFifo(&UartCommOutTxFifo, buffer[i]);
 	LL_USART_EnableIT_TXE(UART5);
 }
 
-void sendOutToNext(u8 *buffer,u8 len)			 //转发数据,串口不同
+void sendOutToNext(u8 *buffer,u8 len)			 //mcu->pc发送
 {
 	int i;
+	
+	
+	
 	for (i=0;i<len;i++)  EnFifo(&UartCommInTxFifo, buffer[i]);
 	LL_USART_EnableIT_TXE(UART4);
 }
 
+
+/**************************************************************************************************************/
 
 void doInFrame(u8 *buffer)			// PC ==> MCU
 {
@@ -88,6 +93,7 @@ void doInFrame(u8 *buffer)			// PC ==> MCU
 	if (pHead->srcAddr != PC_ADDR)	return;			//源地址错误
 	if (pHead->destAddr != myAddr)		//转发
 		{
+			
 			sendInToNext(frameInRxBuffer,pHead->len);
 			return;
 		}
@@ -97,23 +103,55 @@ void doInFrame(u8 *buffer)			// PC ==> MCU
 			case CMD_ID_RESET:
 				__NVIC_SystemReset();
 				break;
+			
+      case CMD_ID_SETPARA:
+				
+			  break;
+			
+			case CMD_ID_CALIBRATION:
+			   cleanState = state_calibration;
+			  break;
+			case STATE_RESET:  //0x04  
+			   cleanState = state_reset;
+			Trace_Print(" ARRIVED \r\n");
+			  break;
+			case STATE_DETECT_AFTER_CLEAN:
+			   cleanState = state_detect_after_clean;
 
 			default: break;
 		}
 	
 	
 }
+
+//typedef enum
+//{
+//	state_reset,
+//	state_idle,
+//	state_detect,		//检测晶体是否短路
+//	state_clean,
+//	state_detect_after_clean,
+//	state_wait,
+//	state_finished,
+//	state_calibration,
+//	state_detect_probe,
+//	
+//}enumTestState;
 /**************************************************************************************************************/
 
-void doOutFrame(u8 *buffer)			// PC ==> MCU
+void doOutFrame(u8 *buffer)			// MCU ==> PC   ，判断frameOutRxBuffer地址是否是否是给我的，如果不是，就转发
 {
 	u8 dstAddr,srcAddr;
 	stCommHeader *pHead;
 	pHead = (stCommHeader *)buffer;
+  if (pHead->destAddr != myAddr)   //转发
+	{
+		sendOutToNext(frameOutRxBuffer,pHead->len);
+		return;
+	}
 
-
-	
 }
+
 
 
 
@@ -166,7 +204,7 @@ void getInFrame(void)      // 从数据包中取出一帧数据，处理或者�
 	return ;
 }
 /**************************************************************************************************************/
-void getOutFrame(void)   //  MCU => PC
+void getOutFrame(void)   //  MCU => PC  得到数据将UartCommOutRxFifo数据存入frameOutRxBuffer
 {
 	u8 len,i;
 	u16 cmd;
@@ -181,7 +219,7 @@ void getOutFrame(void)   //  MCU => PC
       if (pHead->head1 == HEAD1 && pHead->head2 == HEAD2)    // Get Head 
       {
 
-				len = FifoLen(&UartCommOutRxFifo);
+				len = FifoLen(&UartCommOutRxFifo);  //fifo队列总共多长
 				if (len >= pHead->len) 
 					{
 						for (i = 0; i < pHead->len; i++) frameOutRxBuffer[i] = DeFifo(&UartCommOutRxFifo);
@@ -190,7 +228,8 @@ void getOutFrame(void)   //  MCU => PC
 						crc16_rcv = frameOutRxBuffer[pHead->len - 2] + (frameOutRxBuffer[pHead->len - 1] * 256);
 						if (crc16 == crc16_rcv)
 							{
-								doOutFrame(frameOutRxBuffer);
+								doOutFrame(frameOutRxBuffer);  
+								Trace_Print(" SEND OK \r\n");
 							}
 					}
 	      else   

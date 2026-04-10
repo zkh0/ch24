@@ -6,23 +6,23 @@
 u8 UartTraceSendBuffer[UART_TX_SIZE];
 u8 UartTraceReceiveBuffer[UART_RX_SIZE];
 
-u8 UartInSendBuffer[UART_TX_SIZE];
-u8 UartInReceiveBuffer[UART_RX_SIZE];
+u8 UartInSendBuffer[UART_TX_SIZE];     //pc->mcu 发送缓存
+u8 UartInReceiveBuffer[UART_RX_SIZE];  //pc->mcu 接收缓存
 
-u8 UartOutSendBuffer[UART_TX_SIZE];
-u8 UartOutReceiveBuffer[UART_RX_SIZE];
+u8 UartOutSendBuffer[UART_TX_SIZE];     //mcu->pc 发送缓存
+u8 UartOutReceiveBuffer[UART_RX_SIZE];  //muc->pc 接收缓存
 
 
 
 
 FifoStruct UartCommInTxFifo;			//接收串口      from PC
-FifoStruct UartCommInRxFifo;
+FifoStruct UartCommInRxFifo;      //
 
 FifoStruct UartTraceTxFifo;				//调试串口
 FifoStruct UartTraceRxFifo;
 
 
-FifoStruct UartCommOutTxFifo;			//发送串口      to MCU
+FifoStruct UartCommOutTxFifo;			//发送串口      to pc
 FifoStruct UartCommOutRxFifo;
 
 /**************************************************************************************************/
@@ -99,6 +99,7 @@ void USART1_IRQHandler(void)
 									}
 								else 
 									{
+										
 										LL_USART_DisableIT_TXE(USART1);
 										break;
 									}
@@ -110,6 +111,7 @@ void USART1_IRQHandler(void)
 		if (LL_USART_IsActiveFlag_IDLE(USART1))			//注意，可能还有数据，接收完
 			{
 					LL_USART_ClearFlag_IDLE(USART1);
+				  LL_USART_DisableIT_IDLE(USART1);
 				  while (1)
         	{
         		 if (LL_USART_IsActiveFlag_RXNE(USART1))
@@ -130,8 +132,46 @@ int fputc(int ch, FILE *f)
 }
 
 
+//// 重定向 UART4
+//int fputc4(int ch, FILE *f)
+//{
+//	EnFifo(&UartCommInTxFifo, ch);
+//	LL_USART_EnableIT_TXE_TXFNF(UART4);
+//	return ch;
+//}
+
+//// 重定向 UART5
+//int fputc5(int ch, FILE *f)
+//{
+//	EnFifo(&UartCommOutTxFifo, ch);
+//	LL_USART_EnableIT_TXE_TXFNF(UART5);
+//	return ch;
+//}
 
 
+//// UART4 打印
+//void u4_printf(const char *fmt, ...)
+//{
+//	va_list ap;
+//	va_start(ap, fmt);
+//	vsprintf(printf_buf, fmt, ap);
+//	va_end(ap);
+
+//	char *p = printf_buf;
+//	while(*p) fputc4(*p++, NULL);
+//}
+
+//// UART5 打印
+//void u5_printf(const char *fmt, ...)
+//{
+//	va_list ap;
+//	va_start(ap, fmt);
+//	vsprintf(printf_buf, fmt, ap);
+//	va_end(ap);
+
+//	char *p = printf_buf;
+//	while(*p) fputc5(*p++, NULL);
+//}
 /**************************************************************************************************/
 void initUartFifo(void)
 {
@@ -231,7 +271,7 @@ void uart5Func(void)
 	        		{
 								if (FifoLen(&UartCommOutTxFifo)>0)
 									{
-				       	 			LL_USART_TransmitData8(UART5, DeFifo(&UartCommOutTxFifo));
+				       	 			LL_USART_TransmitData8(UART5, DeFifo(&UartCommOutTxFifo));  //
 									}
 								else 
 									{

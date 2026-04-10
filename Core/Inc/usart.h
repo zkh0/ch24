@@ -7,7 +7,7 @@
 
 /**************************************************************************************************/
 
-
+extern char printf_buf[128];  // 共用缓冲区
 
 extern FifoStruct UartCommInTxFifo;			//接收串口      from PC
 extern FifoStruct UartCommInRxFifo;
@@ -26,8 +26,8 @@ extern FifoStruct UartCommOutRxFifo;
 void initUartFifo(void);
 void uart4Func(void);
 void uart5Func(void);
-
-
+//void u4_printf(const char *fmt, ...);
+//void u5_printf(const char *fmt, ...);
 /**************************************************************************************************/
 
 /**************************************************************************************************/

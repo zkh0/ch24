@@ -12,15 +12,15 @@ stUserPara userPara;
 /**************************************************************************************************************/
 u8  cleanFinished = 0;
 
-enumTestState cleanState = state_reset;
-enumCrystalPoint crystalPoint= crystal_before_clean;
-u16 crystalRes[CRYSTAL_NUM][max_crystal_point];
+enumTestState cleanState = state_reset;                //状态
+enumCrystalPoint crystalPoint= crystal_before_clean;   //
+u16 crystalRes[CRYSTAL_NUM][max_crystal_point];        //24路电阻结果
 u32 tick;
 /**************************************************************************************************************/
-#define 	ADC_BUFFER_SIZE	 (5*8)
+#define 	ADC_BUFFER_SIZE	 (5*8)  
 
 __attribute__((aligned(4)))
-u16 ADCBuffer1[ADC_BUFFER_SIZE];
+u16 ADCBuffer1[ADC_BUFFER_SIZE];                 //adc/DMA缓冲区
 
 __attribute__((aligned(4)))
 u16 ADCBuffer2[ADC_BUFFER_SIZE];
@@ -35,13 +35,14 @@ __attribute__((aligned(4)))
 u16 ADCBuffer5[ADC_BUFFER_SIZE];
 
 __attribute__((aligned(4)))
-u16 ADCAllBuffer[CRYSTAL_NUM];
+u16 ADCAllBuffer[CRYSTAL_NUM];                  //adc所有值
 
 /**************************************************************************************************************/
 u16 ADC1_2Value;
 
 /**************************************************************************************************************/
 extern u8 myAddr; 
+extern u8 frameOutTxBuffer[UART_RX_SIZE]; 
 /**************************************************************************************************************/
 
 
@@ -84,7 +85,7 @@ u16 calcCrystalRes(u16 AD,u8 ch)    // mv, 返回电阻值,
 		//Trace_Print(" res = %0.2f   \r\n",res);
 
 
-		if (res > 65000) res = 65000;
+		if (res > 65000) res = 65000;  
 		if (res <0) res = 0;
 		
 		return (u16)res;
@@ -147,7 +148,7 @@ void  setOverCurrent(void)   //DAC1 1.2v   DAC2   1
 }
 
 /**************************************************************************************************************/
-void clearOverCurrentFlag(void)
+void clearOverCurrentFlag(void)  
 {
 	LL_GPIO_ResetOutputPin(D_CLR_GPIO_Port, D_CLR_Pin);
 	hwDelayms(10);
@@ -176,8 +177,10 @@ void cleanMain(void)
 		{
 			case state_reset:
 				//Trace_Print("state reset \r\n");
+			
 				if (checkStart()) 
 				{
+					Trace_Print("come in \r\n");
 						cleanState = state_idle;
 						initVar();
 						setOverCurrent();
@@ -187,7 +190,7 @@ void cleanMain(void)
 			case state_idle:
 				if (checkStart())
 					{
-						Trace_Print(" start detect crystal\r\n");
+						Trace_Print(" state_idle\r\n");
 						cleanState = state_detect;
 						measureVoltage(ON);
 						hwDelayms(20);				// 等待电源稳定
@@ -199,15 +202,24 @@ void cleanMain(void)
 					updateCrystalRes(crystal_before_clean);			
 					measureVoltage(OFF);
 					hwDelayms(1);
-					traceCrystalRes();
+			 
+			 		traceCrystalRes();
+			  Trace_Print(" updateCrystalRes successful\r\n");
 				break;
 
 			case state_clean:
 				clean();
-				
+			measureVoltage(ON);
+			hwDelayms(20);
+			ADCMeasure();
+			measureVoltage(OFF);
+			updateCrystalRes(crystal_after_clean);	
+      hwDelayms(5); 
 			
-				updateCrystalRes(crystal_after_clean);
+			sendDataToPC();
+			
 				hwDelayms(500);
+			
 				
 					{
 						Trace_Print(" clean finished!  now ready to detect again\r\n");
@@ -241,13 +253,206 @@ void cleanMain(void)
 			
 			default:break;
 		}
+			
+}
+
+
+	
+
+/**************************************************************************************************************/
+/*发送6个字节到pc，前三个是清洗前的状态，后三个是清洗后的状态，*/
+void sendAdcDataToPC(void)    //发送到pc
+{
+	int i;
+	int Bdata;  
+	u8 len = 14;
+	u16 crc16;
+
+	frameOutTxBuffer[0] = HEAD1;
+	frameOutTxBuffer[1] = HEAD2;
+	
+	frameOutTxBuffer[2] = CMD_ID_DATA;  //0x06
+	frameOutTxBuffer[3] = PC_ADDR;
+	frameOutTxBuffer[4] = myAddr;
+	
+	frameOutTxBuffer[5] = len;
+
+
+
+	for (i=0;i<CRYSTAL_NUM;i++) 				
+	{
+		
+			if (crystalRes[CRYSTAL_NUM-1-i][crystal_before_clean] > MAX_OK_RES_VALUE) Bdata |= 0x01;
+			Bdata = Bdata << 1;
+	}
+			 //Bdata = 0x0A0B0C;
+	
+			 frameOutTxBuffer[6] = (Bdata>>16)&0xff;   // 17~24路
+       frameOutTxBuffer[7] = (Bdata>>8)&0xff;   // 9~16路
+       frameOutTxBuffer[8] = (Bdata)&0xff;   // 1~8路
+	
+	
+		for (i=0;i<CRYSTAL_NUM;i++) 				
+	{
+		
+			if (crystalRes[CRYSTAL_NUM-1-i][crystal_after_clean] > MAX_OK_RES_VALUE) Bdata |= 0x01;
+			Bdata = Bdata << 1;
+	}
+			 //Bdata = 0x0A0B0C;
+	
+			 frameOutTxBuffer[9] = (Bdata>>16)&0xff;   // 17~24路
+       frameOutTxBuffer[10] = (Bdata>>8)&0xff;   // 9~16路
+       frameOutTxBuffer[11] = (Bdata)&0xff;   // 1~8路
+	
+	   crc16 = crc16_modbus(frameOutTxBuffer,len - 2);
+	   frameOutTxBuffer[12] = (crc16>>8)&0xff;
+	   frameOutTxBuffer[13] = crc16&0xff;
+		 sendOutToNext(frameOutTxBuffer,len);
 	
 }
 
-/**************************************************************************************************************/
-u8 checkStart(void)  // 1 is on  0 is off
+
+void sendDataToPC(void)    //发送阻值到pc
 {
-	if (LL_GPIO_IsInputPinSet(START_GPIO_Port, START_Pin) == 0) return 1;
+	int i;
+	u16 ret = 0;
+	int Bdata;  
+	u8 len = 32;
+	u16 crc16;
+
+	frameOutTxBuffer[0] = HEAD1;
+	frameOutTxBuffer[1] = HEAD2;
+	
+	frameOutTxBuffer[2] = CMD_ID_DATA;  //0x06
+	frameOutTxBuffer[3] = PC_ADDR;
+	frameOutTxBuffer[4] = myAddr;
+	
+	frameOutTxBuffer[5] = len;
+
+
+
+	for (i=0;i<CRYSTAL_NUM;i++) 				
+	{
+		ret = crystalRes[i][crystal_before_clean];
+		frameOutTxBuffer[i+6] = ret;
+	}
+	
+		  crc16 = crc16_modbus(frameOutTxBuffer,len - 2);
+
+	   frameOutTxBuffer[30] = crc16&0xff;
+		 frameOutTxBuffer[31] = (crc16>>8)&0xff;
+	
+	sendOutToNext(frameOutTxBuffer,len);
+
+	
+	
+	
+//	void traceCrystalRes(void)
+//{
+//	int i;
+//	for (i=0;i<CRYSTAL_NUM;i++) 				
+//	{
+//			Trace_Print(" [%d] = %d \r\n",i+1,calcCrystalRes(ADCAllBuffer[i],i));
+//			delayms(2);
+//	}
+//}
+	
+	
+//		for (i=0;i<CRYSTAL_NUM;i++) 				
+//	{
+//		
+//			if (crystalRes[CRYSTAL_NUM-1-i][crystal_after_clean] > MAX_OK_RES_VALUE) Bdata |= 0x01;
+//			Bdata = Bdata << 1;
+//	}
+//			 //Bdata = 0x0A0B0C;
+//	
+//			 frameOutTxBuffer[9] = (Bdata>>16)&0xff;   // 17~24路
+//       frameOutTxBuffer[10] = (Bdata>>8)&0xff;   // 9~16路
+//       frameOutTxBuffer[11] = (Bdata)&0xff;   // 1~8路
+	
+//	   crc16 = crc16_modbus(frameOutTxBuffer,len - 2);
+//	   frameOutTxBuffer[12] = (crc16>>8)&0xff;
+//	   frameOutTxBuffer[13] = crc16&0xff;
+//		 sendOutToNext(frameOutTxBuffer,len);
+	
+}
+
+//void sendAdcAfterDataToPC(void)  //发送到pc
+//{
+//	
+//   int i;
+//	u8 Adata[3];  // 3个字节：存24路状态
+//	u8 len = 14;
+
+//	frameOutTxBuffer[0] = HEAD1;
+//	frameOutTxBuffer[1] = HEAD2;
+//	
+//	frameOutTxBuffer[2] = CMD_ID_DATA;
+//	frameOutTxBuffer[3] = PC_ADDR;
+//	frameOutTxBuffer[4] = myAddr;
+//	
+//	frameOutTxBuffer[5] = len;
+//	   
+
+
+//    // 清空 3 个字节
+//    Adata[0] = 0; // 通道 0~7   (第1~8路)
+//    Adata[1] = 0; // 通道 8~15  (第9~16路)
+//    Adata[2] = 0; // 通道 16~23 (第17~24路)
+
+//			for (i = 0; i < CRYSTAL_NUM; i++)
+//			{
+//					int ch = CRYSTAL_NUM - 1 - i; // 反向通道
+//					int res = crystalRes[ch][crystal_before_clean];
+//					u8 bit = (res > MAX_OK_RES_VALUE) ? 1 : 0;
+
+//					if (i < 8)
+//					{
+//							Adata[0] = (Adata[0] << 1) | bit;
+//					}
+//					else if (i < 16)
+//					{
+//							Adata[1] = (Adata[1] << 1) | bit;
+//					}
+//					else
+//					{
+//							Adata[2] = (Adata[2] << 1) | bit;
+//					}
+//			}
+//			
+//			 frameOutTxBuffer[6] = Adata[2]; // 17~24路
+//       frameOutTxBuffer[7] = Adata[1]; // 9~16路
+//       frameOutTxBuffer[8] = Adata[0]; // 1~8路
+//	  
+//			sendOutToNext(frameOutTxBuffer,9);
+
+//}
+//	
+
+
+//void sendInToNext(u8 *buffer,u8 len)			 //转发数据 mcu->pc
+//{
+//	int i;
+//	for (i=0;i<len;i++)  EnFifo(&UartCommOutTxFifo, buffer[i]);
+//	LL_USART_EnableIT_TXE(UART5);
+//}
+
+//void sendAdcDataToPC(void)
+//{
+//    char buf[64];
+//    for(int i=0; i<24; i++)
+//    {
+//        // 十进制格式：CH1: 123
+//        sprintf(buf, "CH%d:%d\r\n", i+1, crystalRes[i][crystal_before_clean]);
+//        
+//        // 你的UART4发送函数（发给PC）
+//        sendOutToNext((uint8_t*)buf, strlen(buf));
+//    }
+//}
+/**************************************************************************************************************/
+u8 checkStart(void)  // 1 is on  0 is off    自动检测 
+{
+	if (LL_GPIO_IsInputPinSet(START_GPIO_Port, START_Pin) == 0) return 1;  
 	return 0;
 }
 
@@ -262,7 +467,7 @@ void measureVoltage(u8 onoff)
 {
 	if (onoff == ON)
 		{
-			LL_GPIO_SetOutputPin(EN_1_2V_GPIO_Port, EN_1_2V_Pin);
+			LL_GPIO_SetOutputPin(EN_1_2V_GPIO_Port, EN_1_2V_Pin);  //PB7
 		}
 	else if (onoff == OFF)
 		{
@@ -280,9 +485,40 @@ void checkCrystal(void)			//判断晶体有无烧断，并记录时间，
 	
 	crystalRes[0][crystal_temp] = crystalRes[0][crystal_after_clean];
 }
+//void checkCrystal(void)		// 判断24路晶体有无烧断
+//{	
+//	int i;
+//	static u16 lastRes[CRYSTAL_NUM];  // 保存上一次的值
+//	
+//	// 遍历所有24路通道
+//	for(i=0; i<CRYSTAL_NUM; i++)
+//	{
+//		// 获取当前电阻
+//		u16 nowRes = crystalRes[i][crystal_after_clean];
+//		
+//		// ====================
+//		// 判断是否烧断（核心）
+//		// ====================
+//		if(nowRes > 50000)  // 电阻大于50kΩ认为烧断
+//		{
+//			// 这里可以记录故障、记录时间、报警
+//			// 例如：crystalBrokenFlag[i] = 1;
+//		}
 
+//		// ====================
+//		// 判断是否发生变化
+//		// ====================
+//		if(nowRes != lastRes[i])
+//		{
+//			// 状态变化了
+//		}
 
-void updateCrystalRes(enumCrystalPoint state) 
+//		// 更新上一次的值
+//		lastRes[i] = nowRes;
+//	}
+//}
+
+void updateCrystalRes(enumCrystalPoint state)  //上传电阻值
 {	
 	int i;
 
@@ -354,7 +590,7 @@ void initADC(void)   //初始化
 	
 }
 
-u16 calcAverage(u16 *buffer,u16 index)
+u16 calcAverage(u16 *buffer,u16 index)   //8次平均
 {
 	u32 sum= 0,i;
 	for (i=0;i<8;i++)

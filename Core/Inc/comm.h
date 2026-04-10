@@ -20,14 +20,18 @@ typedef struct
 #define 	HEAD2   0x55
 /**************************************************************************************************************/
 #define 	PC_ADDR					0xF0
-#define 	MAX_MCU_ADDR		0x04
+#define 	MAX_MCU_ADDR		0x0F
+
+#define 	MAX_OK_RES_VALUE		95
 
 /**************************************************************************************************/
 // PC ==> MCU   注意，复位无法广播指令，因为要接力
 #define 	CMD_ID_SETPARA						0x01
 #define 	CMD_ID_RESET							0x02
 #define 	CMD_ID_CALIBRATION				0x03
-
+#define   STATE_RESET               0x04
+#define   STATE_DETECT_AFTER_CLEAN  0x05
+#define 	CMD_ID_DATA								0x06
 
 /**************************************************************************************************/
 
@@ -46,7 +50,7 @@ void testuart4Send(void);
 void testuart5Send(void);
 u16 crc16_modbus(u8 *data, u16 length);
 void commFunc(void);
-
+void sendOutToNext(u8 *buffer,u8 len);
 /**************************************************************************************************************/
 
 /**************************************************************************************************************/
