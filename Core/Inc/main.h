@@ -120,10 +120,12 @@ void Error_Handler(void);
 #define START_GPIO_Port GPIOF
 #define STOP_Pin LL_GPIO_PIN_13
 #define STOP_GPIO_Port GPIOF
+
 #define EN1_Pin LL_GPIO_PIN_6
 #define EN1_GPIO_Port GPIOC
 #define EN2_Pin LL_GPIO_PIN_7
 #define EN2_GPIO_Port GPIOC
+
 #define EN3_Pin LL_GPIO_PIN_0
 #define EN3_GPIO_Port GPIOG
 #define EN4_Pin LL_GPIO_PIN_1
@@ -134,10 +136,12 @@ void Error_Handler(void);
 #define EN6_GPIO_Port GPIOG
 #define EN7_Pin LL_GPIO_PIN_4
 #define EN7_GPIO_Port GPIOG
+
 #define EN8_Pin LL_GPIO_PIN_8
 #define EN8_GPIO_Port GPIOC
 #define EN9_Pin LL_GPIO_PIN_9
 #define EN9_GPIO_Port GPIOC
+
 #define EN10_Pin LL_GPIO_PIN_8
 #define EN10_GPIO_Port GPIOA
 #define EN11_Pin LL_GPIO_PIN_9

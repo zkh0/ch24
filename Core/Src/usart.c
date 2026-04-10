@@ -110,8 +110,17 @@ void USART1_IRQHandler(void)
 
 		if (LL_USART_IsActiveFlag_IDLE(USART1))			//注意，可能还有数据，接收完
 			{
-					LL_USART_ClearFlag_IDLE(USART1);
-				  LL_USART_DisableIT_IDLE(USART1);
+					//LL_USART_ClearFlag_IDLE(USART1);
+				  //LL_USART_DisableIT_IDLE(USART1);
+				
+				
+				// 正确清除 IDLE 标志（STM32 通用，G4 必用这个！）
+//       __IO uint32_t tmp;
+//        tmp = USART1->ISR;  // 读状态寄存器
+//        tmp = USART1->RDR;  // 读数据寄存器
+//         (void)tmp;         // 防止编译警告
+
+				
 				  while (1)
         	{
         		 if (LL_USART_IsActiveFlag_RXNE(USART1))

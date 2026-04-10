@@ -102,14 +102,14 @@ void startAllCh(void)
 	LL_GPIO_SetOutputPin(GPIOG, EN3_Pin | EN4_Pin | EN5_Pin | EN6_Pin | EN7_Pin | EN13_Pin | EN14_Pin | EN15_Pin | EN16_Pin );
 
 	//T10-12
-	LL_GPIO_SetOutputPin(GPIOA, EN8_Pin | EN9_Pin | EN10_Pin);
+	LL_GPIO_SetOutputPin(GPIOA, EN10_Pin | EN11_Pin | EN12_Pin);//修改，原来是PA8,9,10
 
 	//T17-22
 	LL_GPIO_SetOutputPin(GPIOD, EN17_Pin | EN18_Pin | EN19_Pin | EN20_Pin | EN21_Pin | EN22_Pin);
 
 	// T23,24
-	LL_GPIO_SetOutputPin(GPIOB, EN23_Pin | EN24_Pin );
 }
+
 
 void stopAllCh(void)
 {
@@ -122,7 +122,7 @@ void stopAllCh(void)
 	);
 
 	//T10-12
-	LL_GPIO_ResetOutputPin(GPIOA, EN8_Pin | EN9_Pin | EN10_Pin);
+	LL_GPIO_ResetOutputPin(GPIOA, EN10_Pin | EN11_Pin | EN12_Pin);//修改，原来是PA8,9,10
 
 	//T17-22
 	LL_GPIO_ResetOutputPin(GPIOD, EN17_Pin | EN18_Pin | EN19_Pin | EN20_Pin | EN21_Pin | EN22_Pin);
@@ -177,7 +177,6 @@ void cleanMain(void)
 		{
 			case state_reset:
 				//Trace_Print("state reset \r\n");
-			
 				if (checkStart()) 
 				{
 					Trace_Print("come in \r\n");
@@ -199,26 +198,32 @@ void cleanMain(void)
 			case state_detect:
 				 	cleanState = state_clean;
 					ADCMeasure();
-					updateCrystalRes(crystal_before_clean);			
+					updateCrystalRes(crystal_before_clean);	
+			
 					measureVoltage(OFF);
 					hwDelayms(1);
-			 
-			 		traceCrystalRes();
-			  Trace_Print(" updateCrystalRes successful\r\n");
+			
+			    sendDataToPC(crystal_before_clean);
+		    	hwDelayms(20);
+			
+			  	traceCrystalRes();
+			    Trace_Print(" updateCrystalRes successful\r\n");
 				break;
 
 			case state_clean:
-				clean();
-			measureVoltage(ON);
-			hwDelayms(20);
-			ADCMeasure();
-			measureVoltage(OFF);
-			updateCrystalRes(crystal_after_clean);	
-      hwDelayms(5); 
+					
+			    clean();  //清理
 			
-			sendDataToPC();
+					measureVoltage(ON);
+					hwDelayms(20);
+					ADCMeasure();
+					measureVoltage(OFF);
+					updateCrystalRes(crystal_after_clean);	
+					hwDelayms(5); 
+					
+			    sendDataToPC(crystal_after_clean);
 			
-				hwDelayms(500);
+				  hwDelayms(20);
 			
 				
 					{
@@ -312,12 +317,12 @@ void sendAdcDataToPC(void)    //发送到pc
 }
 
 
-void sendDataToPC(void)    //发送阻值到pc
+void sendDataToPC(u8 num)    //发送阻值到pc
 {
 	int i;
 	u16 ret = 0;
 	int Bdata;  
-	u8 len = 32;
+	u8 len = 32+24;
 	u16 crc16;
 
 	frameOutTxBuffer[0] = HEAD1;
@@ -333,14 +338,17 @@ void sendDataToPC(void)    //发送阻值到pc
 
 	for (i=0;i<CRYSTAL_NUM;i++) 				
 	{
-		ret = crystalRes[i][crystal_before_clean];
-		frameOutTxBuffer[i+6] = ret;
+		ret = crystalRes[i][num];
+
+		
+		frameOutTxBuffer[2*i+6+1] = (ret >> 8) & 0xff;
+		frameOutTxBuffer[2*i+6] = ret & 0xff;
 	}
-	
+
 		  crc16 = crc16_modbus(frameOutTxBuffer,len - 2);
 
-	   frameOutTxBuffer[30] = crc16&0xff;
-		 frameOutTxBuffer[31] = (crc16>>8)&0xff;
+	   frameOutTxBuffer[30+24] = crc16&0xff;
+		 frameOutTxBuffer[31+24] = (crc16>>8)&0xff;
 	
 	sendOutToNext(frameOutTxBuffer,len);
 
@@ -430,27 +438,9 @@ void sendDataToPC(void)    //发送阻值到pc
 //	
 
 
-//void sendInToNext(u8 *buffer,u8 len)			 //转发数据 mcu->pc
-//{
-//	int i;
-//	for (i=0;i<len;i++)  EnFifo(&UartCommOutTxFifo, buffer[i]);
-//	LL_USART_EnableIT_TXE(UART5);
-//}
 
-//void sendAdcDataToPC(void)
-//{
-//    char buf[64];
-//    for(int i=0; i<24; i++)
-//    {
-//        // 十进制格式：CH1: 123
-//        sprintf(buf, "CH%d:%d\r\n", i+1, crystalRes[i][crystal_before_clean]);
-//        
-//        // 你的UART4发送函数（发给PC）
-//        sendOutToNext((uint8_t*)buf, strlen(buf));
-//    }
-//}
 /**************************************************************************************************************/
-u8 checkStart(void)  // 1 is on  0 is off    自动检测 
+u8 checkStart(void)  // 1 is on  0 is off     
 {
 	if (LL_GPIO_IsInputPinSet(START_GPIO_Port, START_Pin) == 0) return 1;  
 	return 0;
@@ -462,6 +452,7 @@ void getCrystalState(enumCrystalPoint crystalPoint)   //晶体状态时间点，
 
 	
 }
+
 
 void measureVoltage(u8 onoff)
 {
@@ -601,7 +592,7 @@ u16 calcAverage(u16 *buffer,u16 index)   //8次平均
 }
 
 /**************************************************************************************************************/
-void calibration(void)
+void calibration(void)  //校准所有通道
 {
 	int i;
 	for (i=0;i<24;i++)
@@ -742,10 +733,15 @@ void delayms(u32 ms)
 void clean(void)
 {
 	clearOverCurrentFlag();
-	hwDelayms(1);
+	hwDelayms(10);
 	startAllCh();
-	hwDelayms(50);
+	hwDelayms(100);
 	stopAllCh();
+	hwDelayms(5);
+	startAllCh();
+	hwDelayms(100);
+	stopAllCh();
+	
 	clearOverCurrentFlag();
 
 

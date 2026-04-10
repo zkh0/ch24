@@ -100,7 +100,7 @@ void doInFrame(u8 *buffer)			// PC ==> MCU
 	//地址符合，处理数据并回复
 	switch(pHead->id)
 		{
-			case CMD_ID_RESET:
+		case CMD_ID_RESET:            // 0x01复位
 				__NVIC_SystemReset();
 				break;
 			
@@ -108,14 +108,14 @@ void doInFrame(u8 *buffer)			// PC ==> MCU
 				
 			  break;
 			
-			case CMD_ID_CALIBRATION:
+			case CMD_ID_CALIBRATION:     //  0x03校准
 			   cleanState = state_calibration;
 			  break;
-			case STATE_RESET:  //0x04  
-			   cleanState = state_reset;
+			case STATE_RESET:            //  0x04 开始清理 
+			   cleanState = state_reset;    
 			Trace_Print(" ARRIVED \r\n");
 			  break;
-			case STATE_DETECT_AFTER_CLEAN:
+			case STATE_DETECT_AFTER_CLEAN:    //0x05 清理之后再清理
 			   cleanState = state_detect_after_clean;
 
 			default: break;

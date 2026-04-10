@@ -136,6 +136,7 @@ int main(void)
  Activate_ADC(ADC4);
  Activate_ADC(ADC5);
  initADC();
+ 
   Trace_Print(" system start \r\n");
   /* USER CODE END 2 */
 
@@ -1388,14 +1389,16 @@ static void MX_USART1_UART_Init(void)
   USART_InitStruct.HardwareFlowControl = LL_USART_HWCONTROL_NONE;
   USART_InitStruct.OverSampling = LL_USART_OVERSAMPLING_16;
   LL_USART_Init(USART1, &USART_InitStruct);
+	
   LL_USART_SetTXFIFOThreshold(USART1, LL_USART_FIFOTHRESHOLD_1_2);
   LL_USART_SetRXFIFOThreshold(USART1, LL_USART_FIFOTHRESHOLD_1_2);
   LL_USART_DisableFIFO(USART1);
-  LL_USART_ConfigAsyncMode(USART1);
+	
+  LL_USART_ConfigAsyncMode(USART1);  
 
   /* USER CODE BEGIN WKUPType USART1 */
-	//LL_USART_EnableIT_RXNE(USART1);
-	//LL_USART_EnableIT_IDLE(USART1);
+	LL_USART_EnableIT_RXNE(USART1);
+	LL_USART_EnableIT_IDLE(USART1);
   /* USER CODE END WKUPType USART1 */
 
   LL_USART_Enable(USART1);
