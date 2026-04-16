@@ -127,7 +127,7 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
- // MX_IWDG_Init();
+  //MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 	readMyAddr();
  Activate_ADC(ADC1);
@@ -146,9 +146,9 @@ int main(void)
   {
 		
 
-  	cleanMain();
+ 	  cleanMain();
 		debugFunc();
-    //testuart4Send();
+   // testuart4Send();
 		//testuart5Send();
     /* USER CODE END WHILE */
 
@@ -1839,11 +1839,12 @@ void Activate_ADC(ADC_TypeDef *ADCx)
     /*       CPU processing cycles (depends on compilation optimization).     */
     /* Note: If system core clock frequency is below 200kHz, wait time        */
     /*       is only a few CPU processing cycles.                             */
-    wait_loop_index = ((LL_ADC_DELAY_INTERNAL_REGUL_STAB_US * (SystemCoreClock / (100000 * 2))) / 10);
+    wait_loop_index = ((LL_ADC_DELAY_INTERNAL_REGUL_STAB_US * (SystemCoreClock / (100000 * 2))) / 10);   //  20* 170000000/200000/10
     while(wait_loop_index != 0)
     {
       wait_loop_index--;
     }
+
     
     /* Run ADC self calibration */
     LL_ADC_StartCalibration(ADCx, LL_ADC_SINGLE_ENDED);

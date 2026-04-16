@@ -70,7 +70,7 @@ extern "C" {
 
 /**************************************************************************************************************/
 
-#define TRACE_ENABLE
+//#define TRACE_ENABLE
 
 #ifdef TRACE_ENABLE
 #define Trace_Print  printf    /**< Select the method to print out debug message */
@@ -85,6 +85,7 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
+ //__attribute__((aligned(8)))
 
 /* USER CODE END ET */
 
@@ -172,6 +173,8 @@ void Error_Handler(void);
 #define EN23_GPIO_Port GPIOB
 #define EN24_Pin LL_GPIO_PIN_4
 #define EN24_GPIO_Port GPIOB
+
+
 #define D_CLR_Pin LL_GPIO_PIN_6
 #define D_CLR_GPIO_Port GPIOB
 #define EN_1_2V_Pin LL_GPIO_PIN_7

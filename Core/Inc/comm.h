@@ -26,21 +26,22 @@ typedef struct
 
 /**************************************************************************************************/
 // PC ==> MCU   注意，复位无法广播指令，因为要接力
-#define 	CMD_ID_SETPARA						0x01
-#define 	CMD_ID_RESET							0x02
-#define 	CMD_ID_CALIBRATION				0x03
-#define   STATE_RESET               0x04
-#define   STATE_DETECT_AFTER_CLEAN  0x05
-#define 	CMD_ID_DATA								0x06
+#define 	CMD_ID_USERSET						0x01  //用户设置参数
+#define 	CMD_ID_RESET							0x02  //复位
+#define 	CMD_ID_CALIBRATION				0x03  //校验
 
+#define 	CMD_ID_MEASURE						0x04  //是否成功（不实现）
+#define   CMD_ID_IMPEDANCE          0x05  //阻抗（不实现）
+#define   CMD_ID_PROBDETECTION      0x06  //探头检测
+#define   CMD_ID_READOUT            0X07  //参数读出
+#define   CMD_ID_CHECKGLAG          0x08  //检测标志位
 /**************************************************************************************************/
-
 
 
 /**************************************************************************************************/
 typedef struct
 {
-	u16  maxmA;			//最大清洗电流
+	u16  maxmA;			//最大清洗电流  
 	u8   maxCount;	//最大清洗次数
 }stCleanPara;
 
@@ -51,6 +52,13 @@ void testuart5Send(void);
 u16 crc16_modbus(u8 *data, u16 length);
 void commFunc(void);
 void sendOutToNext(u8 *buffer,u8 len);
+//void ResponseReset(void);    //回复复位
+//void ResponseSet(void);    //回复设置
+//void ResponseReadSet(void);    //回复读参数
+//void ResponseCalibration(void);    //回复校验
+//void ResponseProbDection(void);    //回复探头检测
+void Response(void);
+void SendSetToPC(void);
 /**************************************************************************************************************/
 
 /**************************************************************************************************************/
